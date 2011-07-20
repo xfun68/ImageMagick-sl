@@ -28,10 +28,20 @@ echo "---------------------------------------------------------------------"
 apps=()
 # Function that tries to download a file, if not abort the process.
 function try_download () {
-  file_name=`echo "$1" | ruby -ruri -e 'puts File.basename(gets.to_s.chomp)'` # I cheated.
-  rm -f $file_name # Cleanup in case of retry.
-  echo "Downloading $1"
-  curl --fail --progress-bar -O --url $1
+  if [[ -n "$2" ]]
+  then
+    file_name="$2"
+  else
+    file_name=`echo "$1" | ruby -ruri -e 'puts File.basename(gets.to_s.chomp)'` # I cheated.
+  fi
+
+  if [[ -f "$file_name" ]]
+  then
+    echo "Existed $1"
+  else
+    echo "Downloading $1"
+    curl --fail --progress-bar -o "$file_name" --url $1
+  fi
   result=$? # Store the code of the last action, should be 0 for a successfull download.
   file_size=`ls -l "$file_name" | awk '{print $5}'`
   # We check for normal errors, otherwise check the file size.
@@ -63,8 +73,8 @@ try_download http://www.ijg.org/files/jpegsrc.v8a.tar.gz
 try_download ftp://ftp.remotesensing.org/pub/libtiff/tiff-3.9.2.tar.gz
 try_download http://"$SF_MIRROR".dl.sourceforge.net/project/lcms/lcms/1.19/lcms-1.19.tar.gz
 try_download http://ghostscript.googlecode.com/files/ghostscript-8.71.tar.gz
-try_download ftp://ftp.simplesystems.org/pub/libpng/png/src/libpng-1.4.2.tar.gz
-try_download ftp://ftp.imagemagick.org/pub/ImageMagick/ImageMagick-6.6.0-10.tar.gz
+try_download ftp://ftp.simplesystems.org/pub/libpng/png/src/libpng-1.5.4.tar.gz
+try_download ftp://ftp.imagemagick.org/pub/ImageMagick/ImageMagick.tar.gz
 
 # Decompress applications.
 decompress_applications
@@ -73,7 +83,7 @@ echo "Starting..."
 
 # LibPNG.
 # Official PNG reference library.
-cd libpng-1.4.2
+cd libpng-1.5.4
 ./configure --prefix=$CONFIGURE_PREFIX
 make
 sudo make install
@@ -138,7 +148,7 @@ cd ..
 
 # ImageMagick.
 # Software suite to create, edit, and compose bitmap images.
-cd ImageMagick-6.6.0-10
+cd ImageMagick-6.7.1-0
 export CPPFLAGS=-I$CONFIGURE_PREFIX/include
 export LDFLAGS=-L$CONFIGURE_PREFIX/lib
 ./configure --prefix=$CONFIGURE_PREFIX $IMAGEMAGICK_ARGUMENTS --with-gs-font-dir=$CONFIGURE_GS_FONT/fonts
